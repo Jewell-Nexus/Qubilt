@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { TotpService } from './two-factor/totp.service';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private totpService: TotpService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -30,7 +32,59 @@ export class AuthService {
     return result;
   }
 
-  async login(user: { id: string; email: string }) {
+  async login(
+    user: { id: string; email: string },
+    meta?: { userAgent?: string; ipAddress?: string },
+  ) {
+    // Check if user has 2FA enabled
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { twoFactorEnabled: true },
+    });
+
+    if (fullUser?.twoFactorEnabled) {
+      // Return a short-lived temp token instead of full access
+      const tempToken = this.jwtService.sign(
+        { sub: user.id, email: user.email, type: '2fa-pending' },
+        { expiresIn: '5m' },
+      );
+      return { requiresTwoFactor: true, tempToken };
+    }
+
+    return this.issueTokens(user, meta);
+  }
+
+  async verify2faLogin(
+    tempToken: string,
+    totpToken: string,
+    meta?: { userAgent?: string; ipAddress?: string },
+  ) {
+    let decoded: { sub: string; email: string; type?: string };
+    try {
+      decoded = this.jwtService.verify(tempToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired temp token');
+    }
+
+    if (decoded.type !== '2fa-pending') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    const valid = await this.totpService.verify(decoded.sub, totpToken);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid 2FA token');
+    }
+
+    return this.issueTokens(
+      { id: decoded.sub, email: decoded.email },
+      meta,
+    );
+  }
+
+  private async issueTokens(
+    user: { id: string; email: string },
+    meta?: { userAgent?: string; ipAddress?: string },
+  ) {
     const payload = { sub: user.id, email: user.email };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -46,6 +100,8 @@ export class AuthService {
       data: {
         userId: user.id,
         token: refreshToken,
+        userAgent: meta?.userAgent,
+        ipAddress: meta?.ipAddress,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });

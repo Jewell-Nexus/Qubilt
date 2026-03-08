@@ -1,11 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { EventBusService } from '../events/event-bus.service';
+import { KernelEvents } from '../events/kernel.events';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 
 @Injectable()
 export class WorkspacesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventBus: EventBusService,
+  ) {}
 
   async create(dto: CreateWorkspaceDto, ownerId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -131,6 +142,116 @@ export class WorkspacesService {
     return this.prisma.workspaceMember.updateMany({
       where: { workspaceId, userId },
       data: { roleId },
+    });
+  }
+
+  // ─── INVITATIONS ────────────────────────────────────────────────
+
+  async inviteUser(
+    workspaceId: string,
+    inviterUserId: string,
+    email: string,
+    roleId: string,
+  ) {
+    // Check if already a member
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      const existingMember = await this.prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: { workspaceId, userId: existingUser.id },
+        },
+      });
+      if (existingMember) {
+        throw new ConflictException('User is already a member');
+      }
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    const invitation = await this.prisma.invitation.create({
+      data: {
+        workspaceId,
+        email,
+        roleId,
+        token,
+        invitedBy: inviterUserId,
+        expiresAt,
+      },
+      include: { workspace: { select: { name: true } } },
+    });
+
+    this.eventBus.emit(KernelEvents.INVITATION_SENT, {
+      workspaceId,
+      workspaceName: invitation.workspace.name,
+      email,
+      invitedBy: inviterUserId,
+      token,
+    });
+
+    return invitation;
+  }
+
+  async acceptInvitation(token: string) {
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { token },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      throw new BadRequestException('Invitation has expired');
+    }
+
+    if (invitation.acceptedAt) {
+      throw new BadRequestException('Invitation already accepted');
+    }
+
+    // Find or create user by email
+    let user = await this.prisma.user.findUnique({
+      where: { email: invitation.email },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: invitation.email,
+          username: invitation.email.split('@')[0] + crypto.randomBytes(2).toString('hex'),
+          displayName: invitation.email.split('@')[0],
+          status: 'INVITED',
+        },
+      });
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.workspaceMember.create({
+        data: {
+          workspaceId: invitation.workspaceId,
+          userId: user.id,
+          roleId: invitation.roleId,
+        },
+      }),
+      this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { acceptedAt: new Date() },
+      }),
+    ]);
+
+    return { message: 'Invitation accepted' };
+  }
+
+  async listInvitations(workspaceId: string) {
+    return this.prisma.invitation.findMany({
+      where: {
+        workspaceId,
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 }

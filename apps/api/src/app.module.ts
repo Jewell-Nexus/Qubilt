@@ -18,6 +18,7 @@ import { AuditModule } from './kernel/audit/audit.module';
 import { SettingsModule } from './kernel/settings/settings.module';
 import { JobsModule } from './kernel/jobs/jobs.module';
 import { WebhooksModule } from './kernel/webhooks/webhooks.module';
+import { RealtimeModule } from './kernel/realtime/realtime.module';
 import { RbacGuard } from './kernel/rbac/rbac.guard';
 import configuration from './config/configuration';
 
@@ -48,6 +49,7 @@ import configuration from './config/configuration';
     AuditModule,
     SettingsModule,
     WebhooksModule,
+    RealtimeModule,
   ],
   providers: [
     {

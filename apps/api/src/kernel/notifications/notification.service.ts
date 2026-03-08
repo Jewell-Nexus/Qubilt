@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import * as Bull from 'bull';
 import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '../events/event-bus.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 export interface CreateNotificationDto {
   recipientId: string;
@@ -23,6 +24,7 @@ export class NotificationService {
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
     @InjectQueue('notifications') private readonly notificationQueue: Bull.Queue,
+    @Optional() private readonly realtimeGateway?: RealtimeGateway,
   ) {}
 
   async createNotification(dto: CreateNotificationDto) {
@@ -44,6 +46,15 @@ export class NotificationService {
       recipientId: dto.recipientId,
       notification,
     });
+
+    // Push to connected user via WebSocket
+    if (this.realtimeGateway) {
+      this.realtimeGateway.emitToUser(
+        dto.recipientId,
+        'notification:new',
+        notification,
+      );
+    }
 
     // Check notification preferences for email
     const pref = await this.prisma.notificationPreference.findUnique({

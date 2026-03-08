@@ -38,7 +38,24 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req: any): Promise<ApiResponse<any>> {
-    const data = await this.authService.login(req.user);
+    const data = await this.authService.login(req.user, {
+      userAgent: req.headers?.['user-agent'],
+      ipAddress: req.ip,
+    });
+    return { success: true, data };
+  }
+
+  @Public()
+  @Post('2fa/verify')
+  async verify2fa(
+    @Body('tempToken') tempToken: string,
+    @Body('token') token: string,
+    @Request() req: any,
+  ): Promise<ApiResponse<any>> {
+    const data = await this.authService.verify2faLogin(tempToken, token, {
+      userAgent: req.headers?.['user-agent'],
+      ipAddress: req.ip,
+    });
     return { success: true, data };
   }
 

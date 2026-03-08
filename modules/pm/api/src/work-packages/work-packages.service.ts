@@ -11,6 +11,7 @@ import { CreateWorkPackageDto } from './dto/create-work-package.dto';
 import { UpdateWorkPackageDto } from './dto/update-work-package.dto';
 import { FilterWorkPackagesDto } from './dto/filter-work-packages.dto';
 import { BulkUpdateDto } from './dto/bulk-update.dto';
+import { CustomValuesService } from '../custom-fields/custom-values.service';
 
 const WP_INCLUDE_LIST = {
   type: { select: { id: true, name: true, color: true } },
@@ -28,6 +29,9 @@ const WP_INCLUDE_DETAIL = {
     orderBy: { createdAt: 'desc' as const },
     take: 10,
     include: { details: true },
+  },
+  customValues: {
+    include: { customField: true },
   },
 } as const;
 
@@ -54,6 +58,7 @@ export class WorkPackagesService {
   constructor(
     private prisma: PmPrismaService,
     private eventBus: EventBusService,
+    private customValuesService: CustomValuesService,
   ) {}
 
   async create(projectId: string, dto: CreateWorkPackageDto, authorId: string) {
@@ -235,7 +240,8 @@ export class WorkPackagesService {
     }
 
     // Build update data, converting date strings
-    const updateData: any = { ...dto };
+    const { customValues, ...dtoWithoutCustom } = dto;
+    const updateData: any = { ...dtoWithoutCustom };
     if (dto.startDate !== undefined) {
       updateData.startDate = dto.startDate ? new Date(dto.startDate) : null;
     }
@@ -243,15 +249,22 @@ export class WorkPackagesService {
       updateData.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
     }
 
-    // If status changed to a closed status, set closedAt
+    // If status changed, handle closedAt and emit events
+    let statusChangedToClosed = false;
+    let statusChangedFromClosed = false;
     if (dto.statusId && dto.statusId !== existing.statusId) {
-      const newStatus = await this.prisma.pmStatus.findUnique({
-        where: { id: dto.statusId },
-      });
+      const [newStatus, oldStatus] = await Promise.all([
+        this.prisma.pmStatus.findUnique({ where: { id: dto.statusId } }),
+        this.prisma.pmStatus.findUnique({ where: { id: existing.statusId } }),
+      ]);
       if (newStatus?.isClosed) {
         updateData.closedAt = new Date();
+        statusChangedToClosed = true;
       } else {
         updateData.closedAt = null;
+        if (oldStatus?.isClosed) {
+          statusChangedFromClosed = true;
+        }
       }
     }
 
@@ -272,6 +285,11 @@ export class WorkPackagesService {
       });
     }
 
+    // Set custom values if provided (writes its own journal)
+    if (customValues && customValues.length > 0) {
+      await this.customValuesService.setValues(id, customValues, userId);
+    }
+
     // Emit events
     if (changedFields.length > 0) {
       this.eventBus.emit(PmEvents.WORK_PACKAGE_UPDATED, {
@@ -288,6 +306,20 @@ export class WorkPackagesService {
         workPackageId: id,
         assigneeId: dto.assigneeId,
         subject: wp.subject,
+      });
+    }
+
+    if (statusChangedToClosed) {
+      this.eventBus.emit(PmEvents.WORK_PACKAGE_CLOSED, {
+        workPackageId: id,
+        projectId: existing.projectId,
+      });
+    }
+
+    if (statusChangedFromClosed) {
+      this.eventBus.emit(PmEvents.WORK_PACKAGE_REOPENED, {
+        workPackageId: id,
+        projectId: existing.projectId,
       });
     }
 

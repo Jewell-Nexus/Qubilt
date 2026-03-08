@@ -13,6 +13,15 @@ import { RelationsService } from './relations/relations.service';
 import { RelationsController } from './relations/relations.controller';
 import { JournalsService } from './journals/journals.service';
 import { JournalsController } from './journals/journals.controller';
+import { CustomFieldsService } from './custom-fields/custom-fields.service';
+import { CustomValuesService } from './custom-fields/custom-values.service';
+import { CustomFieldsController } from './custom-fields/custom-fields.controller';
+import { FormLayoutsService } from './forms/form-layouts.service';
+import { FormLayoutsController } from './forms/form-layouts.controller';
+import { WorkflowsService } from './workflows/workflows.service';
+import { WorkflowGuard } from './workflows/workflow.guard';
+import { WorkflowsController } from './workflows/workflows.controller';
+import { DateAlertsProcessor } from './jobs/date-alerts.processor';
 
 @Module({
   controllers: [
@@ -22,6 +31,9 @@ import { JournalsController } from './journals/journals.controller';
     WorkPackagesController,
     RelationsController,
     JournalsController,
+    CustomFieldsController,
+    FormLayoutsController,
+    WorkflowsController,
   ],
   providers: [
     PmPrismaService,
@@ -31,6 +43,12 @@ import { JournalsController } from './journals/journals.controller';
     WorkPackagesService,
     RelationsService,
     JournalsService,
+    CustomFieldsService,
+    CustomValuesService,
+    FormLayoutsService,
+    WorkflowsService,
+    WorkflowGuard,
+    DateAlertsProcessor,
   ],
   exports: [
     PmPrismaService,
@@ -38,6 +56,9 @@ import { JournalsController } from './journals/journals.controller';
     StatusesService,
     PrioritiesService,
     WorkPackagesService,
+    CustomFieldsService,
+    CustomValuesService,
+    WorkflowsService,
   ],
 })
 export class PmModule {}

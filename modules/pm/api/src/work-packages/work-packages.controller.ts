@@ -17,6 +17,7 @@ import { BulkUpdateDto } from './dto/bulk-update.dto';
 import { JwtAuthGuard } from '@kernel/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@kernel/auth/decorators/current-user.decorator';
 import { RequirePermissions } from '@kernel/auth/decorators/require-permissions.decorator';
+import { WorkflowGuard } from '../workflows/workflow.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('pm')
@@ -57,6 +58,7 @@ export class WorkPackagesController {
 
   @Patch('work-packages/:id')
   @RequirePermissions('pm.work_packages.edit')
+  @UseGuards(WorkflowGuard)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateWorkPackageDto,

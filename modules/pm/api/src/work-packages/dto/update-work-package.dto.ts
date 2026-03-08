@@ -5,7 +5,11 @@ import {
   IsDateString,
   IsNumber,
   IsInt,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CustomValueInput } from '../../custom-fields/dto/set-custom-values.dto';
 
 export class UpdateWorkPackageDto {
   @IsOptional()
@@ -64,4 +68,10 @@ export class UpdateWorkPackageDto {
   @IsOptional()
   @IsInt()
   percentDone?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CustomValueInput)
+  customValues?: CustomValueInput[];
 }

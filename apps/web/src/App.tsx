@@ -16,6 +16,7 @@ import { MyPage } from '@/pages/dashboard/MyPage';
 import { NotificationCenter } from '@/pages/NotificationCenter';
 import { ProjectList } from '@/pages/projects/ProjectList';
 import { ProjectLayout } from '@/pages/projects/ProjectLayout';
+import { ProjectModuleRouter } from '@/shell/ProjectModuleRouter';
 import { NotFound } from '@/pages/NotFound';
 
 function AuthGuard() {
@@ -31,14 +32,6 @@ function AuthGuard() {
   }
 
   return <Outlet />;
-}
-
-function ProjectOverview() {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <p className="text-text-secondary">Project overview — modules will populate this view.</p>
-    </div>
-  );
 }
 
 function ComingSoon({ title }: { title: string }) {
@@ -77,8 +70,7 @@ const router = createBrowserRouter([
             path: '/projects/:projectId',
             element: <ProjectLayout />,
             children: [
-              { index: true, element: <ProjectOverview /> },
-              { path: '*', element: <ProjectOverview /> },
+              { path: '*', element: <ProjectModuleRouter /> },
             ],
           },
           {

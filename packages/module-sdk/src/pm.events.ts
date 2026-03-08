@@ -11,6 +11,9 @@ export const PmEvents = {
   SPRINT_STARTED: 'pm.sprint.started',
   SPRINT_CLOSED: 'pm.sprint.closed',
   VERSION_CLOSED: 'pm.version.closed',
+  BOARD_SYNCED: 'pm.board.synced',
+  BASELINE_CREATED: 'pm.baseline.created',
+  SCHEDULE_CALCULATED: 'pm.schedule.calculated',
 } as const;
 
 export interface PmEventPayloads {
@@ -68,5 +71,18 @@ export interface PmEventPayloads {
   'pm.version.closed': {
     versionId: string;
     projectId: string;
+  };
+  'pm.board.synced': {
+    boardId: string;
+    projectId: string;
+  };
+  'pm.baseline.created': {
+    baselineId: string;
+    projectId: string;
+  };
+  'pm.schedule.calculated': {
+    projectId: string;
+    updated: number;
+    conflicts: string[];
   };
 }

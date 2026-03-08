@@ -34,6 +34,16 @@ import { TimeEntriesService } from './time-entries/time-entries.service';
 import { TimeEntriesController } from './time-entries/time-entries.controller';
 import { BudgetsService } from './budgets/budgets.service';
 import { BudgetsController } from './budgets/budgets.controller';
+import { BoardsService } from './boards/boards.service';
+import { BoardsController } from './boards/boards.controller';
+import { BaselinesService } from './baselines/baselines.service';
+import { BaselinesController } from './baselines/baselines.controller';
+import { SchedulingService } from './scheduling/scheduling.service';
+import { SchedulingController } from './scheduling/scheduling.controller';
+import { GanttExportService } from './export/gantt-export.service';
+import { GanttExportController } from './export/gantt-export.controller';
+import { TeamPlannerService } from './planner/planner.service';
+import { TeamPlannerController } from './planner/planner.controller';
 
 @Module({
   controllers: [
@@ -52,6 +62,11 @@ import { BudgetsController } from './budgets/budgets.controller';
     QueriesController,
     TimeEntriesController,
     BudgetsController,
+    BoardsController,
+    BaselinesController,
+    SchedulingController,
+    GanttExportController,
+    TeamPlannerController,
   ],
   providers: [
     PmPrismaService,
@@ -73,6 +88,11 @@ import { BudgetsController } from './budgets/budgets.controller';
     QueriesService,
     TimeEntriesService,
     BudgetsService,
+    BoardsService,
+    BaselinesService,
+    SchedulingService,
+    GanttExportService,
+    TeamPlannerService,
   ],
   exports: [
     PmPrismaService,
@@ -89,6 +109,11 @@ import { BudgetsController } from './budgets/budgets.controller';
     QueriesService,
     TimeEntriesService,
     BudgetsService,
+    BoardsService,
+    BaselinesService,
+    SchedulingService,
+    GanttExportService,
+    TeamPlannerService,
   ],
 })
 export class PmModule {}
@@ -174,6 +199,18 @@ export const PmRegistration: QubiltModule = {
       name: 'Manage budgets',
       category: 'Budgets',
       description: 'Create and manage project budgets',
+    },
+    {
+      key: 'pm.baselines.manage',
+      name: 'Manage baselines',
+      category: 'Baselines',
+      description: 'Create baselines and compare project snapshots',
+    },
+    {
+      key: 'pm.scheduling.manage',
+      name: 'Manage scheduling',
+      category: 'Scheduling',
+      description: 'Run auto-scheduling and manage project schedules',
     },
   ],
   navigation: [

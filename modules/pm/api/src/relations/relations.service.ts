@@ -2,9 +2,12 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PmPrismaService } from '../prisma/pm-prisma.service';
 import { CreateRelationDto, RelationType, MIRROR_MAP } from './dto/create-relation.dto';
+import { SchedulingService } from '../scheduling/scheduling.service';
 
 // Relation types that are directional and could cause circular dependencies
 const DIRECTIONAL_TYPES = new Set<RelationType>([
@@ -14,9 +17,19 @@ const DIRECTIONAL_TYPES = new Set<RelationType>([
   RelationType.BLOCKED_BY,
 ]);
 
+// Relation types that affect scheduling
+const SCHEDULING_TYPES = new Set<RelationType>([
+  RelationType.PRECEDES,
+  RelationType.FOLLOWS,
+]);
+
 @Injectable()
 export class RelationsService {
-  constructor(private prisma: PmPrismaService) {}
+  constructor(
+    private prisma: PmPrismaService,
+    @Inject(forwardRef(() => SchedulingService))
+    private schedulingService: SchedulingService,
+  ) {}
 
   async create(fromId: string, dto: CreateRelationDto) {
     if (fromId === dto.toId) {
@@ -72,6 +85,18 @@ export class RelationsService {
     }
 
     const results = await this.prisma.$transaction(operations);
+
+    // Auto-schedule if this is a scheduling-related relation
+    if (SCHEDULING_TYPES.has(dto.type)) {
+      const wp = await this.prisma.pmWorkPackage.findUnique({
+        where: { id: fromId },
+        select: { projectId: true },
+      });
+      if (wp) {
+        this.schedulingService.calculateSchedule(wp.projectId).catch(() => {});
+      }
+    }
+
     return results[0];
   }
 
@@ -100,6 +125,17 @@ export class RelationsService {
     }
 
     await this.prisma.$transaction(operations);
+
+    // Auto-schedule if this was a scheduling-related relation
+    if (SCHEDULING_TYPES.has(relation.type as RelationType)) {
+      const wp = await this.prisma.pmWorkPackage.findUnique({
+        where: { id: relation.fromId },
+        select: { projectId: true },
+      });
+      if (wp) {
+        this.schedulingService.calculateSchedule(wp.projectId).catch(() => {});
+      }
+    }
   }
 
   async findForWorkPackage(workPackageId: string) {

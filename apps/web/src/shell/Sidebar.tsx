@@ -67,6 +67,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
         {/* Kernel items */}
         <SidebarItem to="/dashboard" icon="LayoutDashboard" label="Dashboard" collapsed={collapsed} />
+        <SidebarItem to="/projects" icon="FolderKanban" label="Projects" collapsed={collapsed} />
 
         {/* Dynamic module items */}
         {enabledModules.length > 0 && (
@@ -84,6 +85,9 @@ export function Sidebar() {
             ))}
           </>
         )}
+
+        <Separator className="my-2 bg-border-default" />
+        <SidebarItem to="/admin" icon="Settings" label="Admin" collapsed={collapsed} />
       </nav>
 
       {/* Footer: User info + settings */}

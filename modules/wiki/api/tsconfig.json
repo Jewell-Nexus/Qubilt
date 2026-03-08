@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@qubilt/shared": ["../../packages/shared/src"],
+      "@qubilt/module-sdk": ["../../packages/module-sdk/src"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

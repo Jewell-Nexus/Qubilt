@@ -21,6 +21,7 @@ import { WebhooksModule } from './kernel/webhooks/webhooks.module';
 import { RealtimeModule } from './kernel/realtime/realtime.module';
 import { RbacGuard } from './kernel/rbac/rbac.guard';
 import { PmModule } from '@qubilt/pm-api';
+import { WikiModule } from '@qubilt/wiki-api';
 import configuration from './config/configuration';
 
 @Module({
@@ -52,6 +53,7 @@ import configuration from './config/configuration';
     WebhooksModule,
     RealtimeModule,
     PmModule,
+    WikiModule,
   ],
   providers: [
     {

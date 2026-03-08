@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/wiki-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WikiPage {
+  id          String   @id @default(cuid())
+  projectId   String?
+  workspaceId String
+  parentId    String?
+  slug        String   @db.VarChar(255)
+  title       String   @db.VarChar(500)
+  icon        String?  @db.VarChar(50)
+  coverUrl    String?
+  position    Int      @default(0)
+  lft         Int      @default(0)
+  rgt         Int      @default(0)
+  isLocked    Boolean  @default(false)
+  isTemplate  Boolean  @default(false)
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   WikiPage?  @relation("PageHierarchy", fields: [parentId], references: [id])
+  children WikiPage[] @relation("PageHierarchy")
+
+  versions       WikiPageVersion[]
+  currentVersion WikiPageContent?
+  databases      WikiDatabase[]
+
+  @@unique([workspaceId, slug])
+  @@index([projectId])
+  @@index([workspaceId])
+  @@map("wiki_pages")
+}
+
+model WikiPageContent {
+  id          String   @id @default(cuid())
+  pageId      String   @unique
+  content     Json
+  textContent String   @db.Text
+  wordCount   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String
+
+  page WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@map("wiki_page_contents")
+}
+
+model WikiPageVersion {
+  id        String   @id @default(cuid())
+  pageId    String
+  content   Json
+  summary   String?  @db.VarChar(255)
+  authorId  String
+  version   Int
+  createdAt DateTime @default(now())
+
+  page WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("wiki_page_versions")
+}
+
+model WikiDatabase {
+  id       String       @id @default(cuid())
+  pageId   String
+  name     String       @db.VarChar(255)
+  icon     String?      @db.VarChar(50)
+  schema   Json
+  viewType DatabaseView @default(TABLE)
+  filters  Json         @default("[]")
+  sortBy   Json         @default("[]")
+  groupBy  String?
+
+  page WikiPage          @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  rows WikiDatabaseRow[]
+
+  @@map("wiki_databases")
+}
+
+enum DatabaseView {
+  TABLE
+  BOARD
+  GALLERY
+  CALENDAR
+  LIST
+}
+
+model WikiDatabaseRow {
+  id         String   @id @default(cuid())
+  databaseId String
+  data       Json
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  database WikiDatabase @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+
+  @@map("wiki_database_rows")
+}
+
+model WikiTemplate {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  icon        String?
+  content     Json
+  category    String   @db.VarChar(100)
+  isBuiltIn   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("wiki_templates")
+}

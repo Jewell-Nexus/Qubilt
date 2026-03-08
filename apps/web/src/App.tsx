@@ -1,5 +1,11 @@
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
+import { AppShell } from '@/shell/AppShell';
+import { AuthLayout } from '@/pages/auth/AuthLayout';
+import { Login } from '@/pages/auth/Login';
+import { Register } from '@/pages/auth/Register';
+import { ForgotPassword } from '@/pages/auth/ForgotPassword';
+import { TwoFactor } from '@/pages/auth/TwoFactor';
 
 function AuthGuard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -16,49 +22,10 @@ function AuthGuard() {
   return <Outlet />;
 }
 
-function AuthLayout() {
-  return <Outlet />;
-}
-
-function AppShell() {
-  return (
-    <div className="flex h-screen">
-      {/* Sidebar and content area — built in later sessions */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
 function DashboardPlaceholder() {
   return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-text-secondary">Dashboard — coming soon</p>
-    </div>
-  );
-}
-
-function LoginPlaceholder() {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-text-secondary">Login — coming soon</p>
-    </div>
-  );
-}
-
-function RegisterPlaceholder() {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-text-secondary">Register — coming soon</p>
-    </div>
-  );
-}
-
-function ForgotPasswordPlaceholder() {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-text-secondary">Forgot Password — coming soon</p>
+      <p className="text-text-secondary">Dashboard — coming in 0-H</p>
     </div>
   );
 }
@@ -71,9 +38,10 @@ const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login', element: <LoginPlaceholder /> },
-      { path: '/register', element: <RegisterPlaceholder /> },
-      { path: '/forgot-password', element: <ForgotPasswordPlaceholder /> },
+      { path: '/login', element: <Login /> },
+      { path: '/register', element: <Register /> },
+      { path: '/forgot-password', element: <ForgotPassword /> },
+      { path: '/2fa', element: <TwoFactor /> },
     ],
   },
   {

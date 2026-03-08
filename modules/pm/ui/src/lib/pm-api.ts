@@ -13,7 +13,9 @@ import type {
   TimeActivity,
   PmSprint,
   PmBoard,
+  PmBoardCard,
   PmBaseline,
+  BaselineComparison,
   PmBudget,
   PmCustomField,
   PaginatedResult,
@@ -127,9 +129,21 @@ export function getBoard(id: string) {
   return get<PmBoard>(`/pm/boards/${id}`);
 }
 
+export function createBoard(projectId: string, dto: { name: string; type: string }) {
+  return post<PmBoard>(`/pm/projects/${projectId}/boards`, dto);
+}
+
+export function moveBoardCard(cardId: string, dto: { columnId: string; position: number }) {
+  return post<PmBoardCard>(`/pm/board-cards/${cardId}/move`, dto);
+}
+
 // Baselines
 export function getBaselines(projectId: string) {
   return get<PmBaseline[]>(`/pm/projects/${projectId}/baselines`);
+}
+
+export function compareBaseline(id: string) {
+  return get<BaselineComparison>(`/pm/baselines/${id}/compare`);
 }
 
 // Budgets
@@ -140,6 +154,23 @@ export function getBudgets(projectId: string) {
 // Custom Fields
 export function getCustomFields(workspaceId: string) {
   return get<PmCustomField[]>('/pm/custom-fields', { workspaceId });
+}
+
+// Sprints
+export function createSprint(projectId: string, dto: { name: string; startDate?: string; endDate?: string; goal?: string }) {
+  return post<PmSprint>(`/pm/projects/${projectId}/sprints`, dto);
+}
+
+export function completeSprint(id: string, dto: { action: string }) {
+  return post<PmSprint>(`/pm/sprints/${id}/close`, dto);
+}
+
+export function updateTimeEntry(id: string, dto: Partial<LogTimeDto>) {
+  return patch<TimeEntry>(`/pm/time/${id}`, dto);
+}
+
+export function deleteTimeEntry(id: string) {
+  return del<void>(`/pm/time/${id}`);
 }
 
 // Workspace Members (kernel endpoint)

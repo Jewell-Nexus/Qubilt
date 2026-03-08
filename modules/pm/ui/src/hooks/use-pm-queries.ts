@@ -27,6 +27,11 @@ export const pmKeys = {
   queries: (projectId?: string) => ['pm', 'queries', projectId] as const,
   timeActivities: (projectId: string) => ['pm', 'time-activities', projectId] as const,
   members: (workspaceId: string) => ['pm', 'members', workspaceId] as const,
+  boards: (projectId: string) => ['pm', 'boards', projectId] as const,
+  board: (id: string) => ['pm', 'board', id] as const,
+  baselines: (projectId: string) => ['pm', 'baselines', projectId] as const,
+  baselineCompare: (id: string) => ['pm', 'baseline-compare', id] as const,
+  timeEntries: (params?: Record<string, unknown>) => ['pm', 'time-entries', params] as const,
 };
 
 // Work Packages
@@ -225,6 +230,105 @@ export function useWorkspaceMembers(workspaceId: string) {
     queryFn: () => pmApi.getWorkspaceMembers(workspaceId),
     enabled: !!workspaceId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Boards
+export function useBoards(projectId: string) {
+  return useQuery({
+    queryKey: pmKeys.boards(projectId),
+    queryFn: () => pmApi.getBoards(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useBoard(id: string) {
+  return useQuery({
+    queryKey: pmKeys.board(id),
+    queryFn: () => pmApi.getBoard(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateBoard(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: { name: string; type: string }) => pmApi.createBoard(projectId, dto),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: pmKeys.boards(projectId) });
+    },
+  });
+}
+
+export function useMoveBoardCard(boardId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, columnId, position }: { cardId: string; columnId: string; position: number }) =>
+      pmApi.moveBoardCard(cardId, { columnId, position }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: pmKeys.board(boardId) });
+      queryClient.invalidateQueries({ queryKey: ['pm', 'work-packages'] });
+    },
+  });
+}
+
+// Baselines
+export function useBaselines(projectId: string) {
+  return useQuery({
+    queryKey: pmKeys.baselines(projectId),
+    queryFn: () => pmApi.getBaselines(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useBaselineComparison(id: string) {
+  return useQuery({
+    queryKey: pmKeys.baselineCompare(id),
+    queryFn: () => pmApi.compareBaseline(id),
+    enabled: !!id,
+  });
+}
+
+// Time Entries (paginated)
+export function useTimeEntries(params?: Record<string, unknown>) {
+  return useQuery({
+    queryKey: pmKeys.timeEntries(params),
+    queryFn: () => pmApi.getTimeEntries(params),
+  });
+}
+
+export function useDeleteTimeEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pmApi.deleteTimeEntry(id),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pm', 'time-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['pm', 'work-packages'] });
+    },
+  });
+}
+
+// Sprints
+export function useCreateSprint(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: { name: string; startDate?: string; endDate?: string; goal?: string }) =>
+      pmApi.createSprint(projectId, dto),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: pmKeys.sprints(projectId) });
+    },
+  });
+}
+
+export function useCompleteSprint(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action }: { id: string; action: string }) =>
+      pmApi.completeSprint(id, { action }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: pmKeys.sprints(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['pm', 'work-packages'] });
+    },
   });
 }
 

@@ -209,6 +209,21 @@ export interface PmBaseline {
   createdAt: string;
 }
 
+export interface BaselineComparisonItem {
+  workPackageId: string;
+  subject: string;
+  baselineStartDate?: string;
+  baselineDueDate?: string;
+  currentStartDate?: string;
+  currentDueDate?: string;
+}
+
+export interface BaselineComparison {
+  added: BaselineComparisonItem[];
+  removed: BaselineComparisonItem[];
+  changed: BaselineComparisonItem[];
+}
+
 export interface PmBudget {
   id: string;
   name: string;

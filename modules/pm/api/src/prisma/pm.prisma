@@ -1,0 +1,465 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/pm-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── WORK PACKAGE TYPES & STATUSES ────────────────────────────────
+
+model PmType {
+  id          String  @id @default(cuid())
+  workspaceId String
+  name        String  @db.VarChar(100)
+  color       String  @db.VarChar(7)
+  isDefault   Boolean @default(false)
+  isMilestone Boolean @default(false)
+  position    Int     @default(0)
+
+  workPackages   PmWorkPackage[]
+  workflowStates PmWorkflowState[]
+
+  @@unique([workspaceId, name])
+  @@map("pm_types")
+}
+
+model PmStatus {
+  id         String  @id @default(cuid())
+  workspaceId String
+  name        String  @db.VarChar(100)
+  color       String  @db.VarChar(7)
+  isClosed    Boolean @default(false)
+  isDefault   Boolean @default(false)
+  isReadonly  Boolean @default(false)
+  position    Int     @default(0)
+
+  workPackages   PmWorkPackage[]
+  workflowStates PmWorkflowState[]
+
+  @@unique([workspaceId, name])
+  @@map("pm_statuses")
+}
+
+model PmPriority {
+  id          String  @id @default(cuid())
+  workspaceId String
+  name        String  @db.VarChar(100)
+  color       String  @db.VarChar(7)
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+  position    Int     @default(0)
+
+  workPackages PmWorkPackage[]
+
+  @@unique([workspaceId, name])
+  @@map("pm_priorities")
+}
+
+// ─── WORK PACKAGES ────────────────────────────────────────────────
+
+model PmWorkPackage {
+  id                   String    @id @default(cuid())
+  projectId            String
+  typeId               String
+  statusId             String
+  priorityId           String?
+  subject              String    @db.VarChar(500)
+  description          String?   @db.Text
+  assigneeId           String?
+  authorId             String
+  parentId             String?
+  lft                  Int       @default(0)
+  rgt                  Int       @default(0)
+  startDate            DateTime? @db.Date
+  dueDate              DateTime? @db.Date
+  estimatedHours       Decimal?  @db.Decimal(10, 2)
+  spentHours           Decimal   @default(0) @db.Decimal(10, 2)
+  percentDone          Int       @default(0)
+  versionId            String?
+  categoryId           String?
+  storyPoints          Int?
+  position             Int       @default(0)
+  scheduleManually     Boolean   @default(false)
+  ignoreNonWorkingDays Boolean   @default(false)
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  closedAt             DateTime?
+
+  type     PmType      @relation(fields: [typeId], references: [id])
+  status   PmStatus    @relation(fields: [statusId], references: [id])
+  priority PmPriority? @relation(fields: [priorityId], references: [id])
+  version  PmVersion?  @relation(fields: [versionId], references: [id])
+  category PmCategory? @relation(fields: [categoryId], references: [id])
+  parent   PmWorkPackage?  @relation("WPHierarchy", fields: [parentId], references: [id])
+  children PmWorkPackage[] @relation("WPHierarchy")
+
+  relations     PmRelation[]    @relation("SourceWP")
+  relationsFrom PmRelation[]    @relation("TargetWP")
+  timeEntries   PmTimeEntry[]
+  journals      PmJournal[]
+  customValues  PmCustomValue[]
+  boardCards    PmBoardCard[]
+  budgetItems   PmBudgetItem[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([statusId])
+  @@index([parentId])
+  @@map("pm_work_packages")
+}
+
+// ─── VERSIONS / MILESTONES ────────────────────────────────────────
+
+model PmVersion {
+  id          String         @id @default(cuid())
+  projectId   String
+  name        String         @db.VarChar(255)
+  description String?        @db.Text
+  status      VersionStatus  @default(OPEN)
+  startDate   DateTime?      @db.Date
+  dueDate     DateTime?      @db.Date
+  sharing     VersionSharing @default(NONE)
+  wikiPageId  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workPackages PmWorkPackage[]
+
+  @@index([projectId])
+  @@map("pm_versions")
+}
+
+enum VersionStatus {
+  OPEN
+  LOCKED
+  CLOSED
+}
+
+enum VersionSharing {
+  NONE
+  DESCENDANTS
+  HIERARCHY
+  TREE
+  SYSTEM
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────────────
+
+model PmCategory {
+  id                String @id @default(cuid())
+  projectId         String
+  name              String @db.VarChar(255)
+  defaultAssigneeId String?
+
+  workPackages PmWorkPackage[]
+
+  @@unique([projectId, name])
+  @@map("pm_categories")
+}
+
+// ─── RELATIONS ────────────────────────────────────────────────────
+
+model PmRelation {
+  id          String       @id @default(cuid())
+  fromId      String
+  toId        String
+  type        RelationType
+  delay       Int?
+  description String?      @db.VarChar(255)
+  createdAt   DateTime     @default(now())
+
+  from PmWorkPackage @relation("SourceWP", fields: [fromId], references: [id], onDelete: Cascade)
+  to   PmWorkPackage @relation("TargetWP", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId, type])
+  @@map("pm_relations")
+}
+
+enum RelationType {
+  RELATES
+  DUPLICATES
+  DUPLICATED_BY
+  BLOCKS
+  BLOCKED_BY
+  PRECEDES
+  FOLLOWS
+  INCLUDES
+  PART_OF
+  REQUIRES
+  REQUIRED_BY
+}
+
+// ─── TIME ENTRIES ─────────────────────────────────────────────────
+
+model PmTimeEntry {
+  id            String   @id @default(cuid())
+  workPackageId String?
+  projectId     String
+  userId        String
+  hours         Decimal  @db.Decimal(10, 2)
+  comment       String?  @db.Text
+  spentOn       DateTime @db.Date
+  activityId    String?
+  billable      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workPackage PmWorkPackage?  @relation(fields: [workPackageId], references: [id])
+  activity    PmTimeActivity? @relation(fields: [activityId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("pm_time_entries")
+}
+
+model PmTimeActivity {
+  id          String  @id @default(cuid())
+  workspaceId String
+  name        String  @db.VarChar(100)
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  timeEntries PmTimeEntry[]
+
+  @@map("pm_time_activities")
+}
+
+// ─── CUSTOM FIELDS ────────────────────────────────────────────────
+
+model PmCustomField {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String          @db.VarChar(255)
+  fieldFormat    CustomFieldType
+  isRequired     Boolean         @default(false)
+  isFilter       Boolean         @default(false)
+  searchable     Boolean         @default(false)
+  defaultValue   String?         @db.Text
+  possibleValues Json?
+  position       Int             @default(0)
+  createdAt      DateTime        @default(now())
+
+  customValues PmCustomValue[]
+
+  @@map("pm_custom_fields")
+}
+
+enum CustomFieldType {
+  STRING
+  TEXT
+  INTEGER
+  FLOAT
+  BOOL
+  DATE
+  DATETIME
+  LIST
+  MULTI_LIST
+  USER
+  VERSION
+  HIERARCHY
+}
+
+model PmCustomValue {
+  id            String @id @default(cuid())
+  workPackageId String
+  customFieldId String
+  value         String @db.Text
+
+  workPackage PmWorkPackage @relation(fields: [workPackageId], references: [id], onDelete: Cascade)
+  customField PmCustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@unique([workPackageId, customFieldId])
+  @@map("pm_custom_values")
+}
+
+// ─── JOURNALS (ACTIVITY LOG) ──────────────────────────────────────
+
+model PmJournal {
+  id            String   @id @default(cuid())
+  workPackageId String
+  userId        String
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  workPackage PmWorkPackage   @relation(fields: [workPackageId], references: [id], onDelete: Cascade)
+  details     PmJournalDetail[]
+
+  @@index([workPackageId])
+  @@map("pm_journals")
+}
+
+model PmJournalDetail {
+  id        String  @id @default(cuid())
+  journalId String
+  property  String  @db.VarChar(100)
+  oldValue  String? @db.Text
+  newValue  String? @db.Text
+
+  journal PmJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+
+  @@map("pm_journal_details")
+}
+
+// ─── BOARDS ───────────────────────────────────────────────────────
+
+model PmBoard {
+  id        String    @id @default(cuid())
+  projectId String
+  name      String    @db.VarChar(255)
+  type      BoardType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  columns PmBoardColumn[]
+
+  @@index([projectId])
+  @@map("pm_boards")
+}
+
+enum BoardType {
+  MANUAL
+  STATUS
+  ASSIGNEE
+  VERSION
+  SUBPROJECT
+  PARENT_CHILD
+}
+
+model PmBoardColumn {
+  id       String @id @default(cuid())
+  boardId  String
+  name     String @db.VarChar(255)
+  position Int    @default(0)
+  query    Json?
+
+  board PmBoard      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards PmBoardCard[]
+
+  @@map("pm_board_columns")
+}
+
+model PmBoardCard {
+  id            String @id @default(cuid())
+  columnId      String
+  workPackageId String
+  position      Int    @default(0)
+
+  column      PmBoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  workPackage PmWorkPackage @relation(fields: [workPackageId], references: [id], onDelete: Cascade)
+
+  @@unique([columnId, workPackageId])
+  @@map("pm_board_cards")
+}
+
+// ─── WORKFLOWS ────────────────────────────────────────────────────
+
+model PmWorkflowState {
+  id          String  @id @default(cuid())
+  workspaceId String
+  typeId      String
+  statusId    String
+  roleId      String
+  allowCreate Boolean @default(false)
+
+  type   PmType   @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  status PmStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, typeId, statusId, roleId])
+  @@map("pm_workflow_states")
+}
+
+// ─── SPRINTS / BACKLOGS ───────────────────────────────────────────
+
+model PmSprint {
+  id        String       @id @default(cuid())
+  projectId String
+  versionId String?
+  name      String       @db.VarChar(255)
+  status    SprintStatus @default(PLANNING)
+  startDate DateTime?    @db.Date
+  endDate   DateTime?    @db.Date
+  goal      String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([projectId])
+  @@map("pm_sprints")
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  CLOSED
+}
+
+// ─── BASELINES ────────────────────────────────────────────────────
+
+model PmBaseline {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String   @db.VarChar(255)
+  snapshotAt DateTime
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String
+
+  @@index([projectId])
+  @@map("pm_baselines")
+}
+
+// ─── BUDGETS ──────────────────────────────────────────────────────
+
+model PmBudget {
+  id          String   @id @default(cuid())
+  projectId   String
+  versionId   String?
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  items PmBudgetItem[]
+
+  @@map("pm_budgets")
+}
+
+model PmBudgetItem {
+  id            String         @id @default(cuid())
+  budgetId      String
+  workPackageId String?
+  type          BudgetItemType
+  description   String         @db.VarChar(255)
+  amount        Decimal        @db.Decimal(14, 2)
+
+  budget      PmBudget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  workPackage PmWorkPackage? @relation(fields: [workPackageId], references: [id])
+
+  @@map("pm_budget_items")
+}
+
+enum BudgetItemType {
+  LABOR
+  MATERIAL
+}
+
+// ─── SAVED QUERIES ────────────────────────────────────────────────
+
+model PmQuery {
+  id          String   @id @default(cuid())
+  projectId   String?
+  userId      String?
+  name        String   @db.VarChar(255)
+  filters     Json     @default("[]")
+  sortBy      Json     @default("[]")
+  groupBy     String?  @db.VarChar(100)
+  columns     Json     @default("[]")
+  isPublic    Boolean  @default(false)
+  isDefault   Boolean  @default(false)
+  displayType String   @default("list") @db.VarChar(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pm_queries")
+}

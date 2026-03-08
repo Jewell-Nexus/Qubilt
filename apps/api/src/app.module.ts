@@ -20,6 +20,7 @@ import { JobsModule } from './kernel/jobs/jobs.module';
 import { WebhooksModule } from './kernel/webhooks/webhooks.module';
 import { RealtimeModule } from './kernel/realtime/realtime.module';
 import { RbacGuard } from './kernel/rbac/rbac.guard';
+import { PmModule } from '@qubilt/pm-api';
 import configuration from './config/configuration';
 
 @Module({
@@ -50,6 +51,7 @@ import configuration from './config/configuration';
     SettingsModule,
     WebhooksModule,
     RealtimeModule,
+    PmModule,
   ],
   providers: [
     {

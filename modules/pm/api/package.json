@@ -1,0 +1,25 @@
+{
+  "name": "@qubilt/pm-api",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/pm.module.ts",
+  "scripts": {
+    "prisma:generate": "prisma generate --schema=src/prisma/pm.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=src/prisma/pm.prisma",
+    "prisma:seed": "tsx src/pm.seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@prisma/client": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
+    "@qubilt/shared": "workspace:*",
+    "@qubilt/module-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.0.0"
+  }
+}

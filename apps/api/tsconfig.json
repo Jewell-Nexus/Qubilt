@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../../",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strict": true,
@@ -11,9 +11,12 @@
       "@qubilt/shared": ["../../packages/shared/src"],
       "@qubilt/shared/*": ["../../packages/shared/src/*"],
       "@qubilt/module-sdk": ["../../packages/module-sdk/src/index.ts"],
-      "@qubilt/module-sdk/*": ["../../packages/module-sdk/src/*"]
+      "@qubilt/module-sdk/*": ["../../packages/module-sdk/src/*"],
+      "@qubilt/pm-api": ["../../modules/pm/api/src/pm.module.ts"],
+      "@qubilt/pm-api/*": ["../../modules/pm/api/src/*"],
+      "@kernel/*": ["./src/kernel/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../modules/*/api/src/**/*", "../../packages/*/src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }

@@ -10,3 +10,6 @@ export type {
 } from './types.js'
 
 export { QubiltPermission, ModuleEnabled } from './decorators.js'
+
+export { PmEvents } from './pm.events.js'
+export type { PmEventPayloads } from './pm.events.js'

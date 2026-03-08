@@ -16,6 +16,8 @@
       "@qubilt/pm-api/*": ["../../modules/pm/api/src/*"],
       "@qubilt/wiki-api": ["../../modules/wiki/api/src/wiki.module.ts"],
       "@qubilt/wiki-api/*": ["../../modules/wiki/api/src/*"],
+      "@qubilt/chat-api": ["../../modules/chat/api/src/chat.module.ts"],
+      "@qubilt/chat-api/*": ["../../modules/chat/api/src/*"],
       "@kernel/*": ["./src/kernel/*"]
     }
   },

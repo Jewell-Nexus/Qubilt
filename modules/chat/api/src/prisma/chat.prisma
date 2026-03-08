@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/chat-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ChannelType {
+  PUBLIC
+  PRIVATE
+  DIRECT
+}
+
+enum ChannelRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  FILE
+}
+
+model ChatChannel {
+  id          String      @id @default(cuid())
+  workspaceId String
+  name        String      @db.VarChar(255)
+  description String?     @db.Text
+  type        ChannelType @default(PUBLIC)
+  icon        String?     @db.VarChar(50)
+  isReadonly  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
+  createdBy   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  members  ChatChannelMember[]
+  messages ChatMessage[]
+
+  @@index([workspaceId])
+  @@map("chat_channels")
+}
+
+model ChatChannelMember {
+  id         String      @id @default(cuid())
+  channelId  String
+  userId     String
+  role       ChannelRole @default(MEMBER)
+  lastReadAt DateTime    @default(now())
+  joinedAt   DateTime    @default(now())
+
+  channel ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
+  @@map("chat_channel_members")
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  channelId   String
+  userId      String
+  threadId    String?
+  content     Json
+  textContent String      @db.Text
+  type        MessageType @default(TEXT)
+  isPinned    Boolean     @default(false)
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+
+  channel   ChatChannel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parent    ChatMessage?   @relation("MessageThread", fields: [threadId], references: [id])
+  replies   ChatMessage[]  @relation("MessageThread")
+  reactions ChatReaction[]
+  attachments ChatAttachment[]
+  bookmarks ChatBookmark[]
+
+  @@index([channelId, createdAt])
+  @@index([threadId])
+  @@map("chat_messages")
+}
+
+model ChatReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("chat_reactions")
+}
+
+model ChatAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  fileName  String   @db.VarChar(255)
+  fileUrl   String
+  fileSize  Int
+  mimeType  String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("chat_attachments")
+}
+
+model ChatBookmark {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  note      String?  @db.Text
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("chat_bookmarks")
+}

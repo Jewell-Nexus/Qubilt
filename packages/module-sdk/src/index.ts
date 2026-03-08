@@ -16,3 +16,6 @@ export type { PmEventPayloads } from './pm.events.js'
 
 export { WikiEvents } from './wiki.events.js'
 export type { WikiEventPayloads } from './wiki.events.js'
+
+export { ChatEvents } from './chat.events.js'
+export type { ChatEventPayloads } from './chat.events.js'

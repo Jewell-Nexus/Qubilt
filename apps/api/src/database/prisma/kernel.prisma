@@ -1,0 +1,447 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── WORKSPACES ───────────────────────────────────────────────────
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(100)
+  logoUrl     String?
+  plan        String   @default("free") @db.VarChar(50)
+  ownerId     String
+  settings    Json     @default("{}")
+  theme       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner            User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members          WorkspaceMember[]
+  enabledModules   WorkspaceModule[]
+  projects         Project[]
+  roles            Role[]
+  settings_entries Setting[]
+  invitations      Invitation[]
+  auditLogs        AuditLog[]
+  themes           Theme[]
+  webhooks         Webhook[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  roleId      String
+  joinedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ─── USERS & AUTH ─────────────────────────────────────────────────
+
+model User {
+  id             String     @id @default(cuid())
+  email          String     @unique @db.VarChar(255)
+  username       String     @unique @db.VarChar(100)
+  displayName    String     @db.VarChar(255)
+  avatarUrl      String?
+  hashedPassword String?
+  status         UserStatus @default(ACTIVE)
+  language       String     @default("en") @db.VarChar(10)
+  timeZone       String     @default("UTC") @db.VarChar(100)
+  emailVerified  Boolean    @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?  @db.VarChar(255)
+  backupCodes      String[] @default([])
+
+  authProviders        UserAuthProvider[]
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+  projectMemberships   ProjectMember[]
+  sessions             Session[]
+  apiKeys              ApiKey[]
+  notifications        Notification[]
+  notificationPrefs    NotificationPreference[]
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  LOCKED
+  DEACTIVATED
+}
+
+model UserAuthProvider {
+  id             String @id @default(cuid())
+  userId         String
+  provider       String @db.VarChar(50)
+  providerUserId String @db.VarChar(255)
+  metadata       Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@map("user_auth_providers")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique @db.VarChar(512)
+  userAgent String?  @db.VarChar(512)
+  ipAddress String?  @db.VarChar(45)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("sessions")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String    @db.VarChar(255)
+  keyHash     String    @unique @db.VarChar(255)
+  keyPrefix   String    @db.VarChar(10)
+  permissions String[]  @default([])
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  email       String    @db.VarChar(255)
+  roleId      String
+  token       String    @unique @db.VarChar(255)
+  invitedBy   String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
+}
+
+// ─── PROJECTS ─────────────────────────────────────────────────────
+
+model Project {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  identifier  String   @db.VarChar(100)
+  description String?  @db.Text
+  isPublic    Boolean  @default(false)
+  active      Boolean  @default(true)
+  parentId    String?
+  lft         Int      @default(0)
+  rgt         Int      @default(0)
+  icon        String?  @db.VarChar(50)
+  color       String?  @db.VarChar(7)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         Project?        @relation("ProjectHierarchy", fields: [parentId], references: [id])
+  children       Project[]       @relation("ProjectHierarchy")
+  members        ProjectMember[]
+  enabledModules ProjectModule[]
+
+  @@unique([workspaceId, identifier])
+  @@index([workspaceId])
+  @@index([parentId])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  project Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles   ProjectMemberRole[]
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model ProjectMemberRole {
+  id              String        @id @default(cuid())
+  projectMemberId String
+  roleId          String
+
+  projectMember ProjectMember @relation(fields: [projectMemberId], references: [id], onDelete: Cascade)
+  role          Role          @relation(fields: [roleId], references: [id])
+
+  @@unique([projectMemberId, roleId])
+  @@map("project_member_roles")
+}
+
+model ProjectModule {
+  id        String @id @default(cuid())
+  projectId String
+  moduleId  String @db.VarChar(100)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, moduleId])
+  @@map("project_modules")
+}
+
+// ─── RBAC ─────────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  builtin     String?  @db.VarChar(50)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  permissions      RolePermission[]
+  workspaceMembers WorkspaceMember[]
+  projectMembers   ProjectMemberRole[]
+
+  @@unique([workspaceId, name])
+  @@map("roles")
+}
+
+model RolePermission {
+  id         String @id @default(cuid())
+  roleId     String
+  permission String @db.VarChar(150)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permission])
+  @@map("role_permissions")
+}
+
+// ─── MODULE REGISTRY ──────────────────────────────────────────────
+
+model InstalledModule {
+  id            String        @id @default(cuid())
+  moduleId      String        @db.VarChar(100)
+  version       String        @db.VarChar(50)
+  source        ModuleSource
+  licenseKey    String?       @db.VarChar(512)
+  licenseStatus LicenseStatus @default(ACTIVE)
+  installedAt   DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  enabledInWorkspaces WorkspaceModule[]
+
+  @@unique([moduleId])
+  @@map("installed_modules")
+}
+
+model WorkspaceModule {
+  id                String  @id @default(cuid())
+  workspaceId       String
+  installedModuleId String
+  enabled           Boolean @default(true)
+  settings          Json    @default("{}")
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installedModule InstalledModule @relation(fields: [installedModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, installedModuleId])
+  @@map("workspace_modules")
+}
+
+enum ModuleSource {
+  CORE
+  MARKETPLACE
+  CUSTOM
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  TRIAL
+  INVALID
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────
+
+model Notification {
+  id           String    @id @default(cuid())
+  recipientId  String
+  moduleId     String    @db.VarChar(100)
+  reason       String    @db.VarChar(100)
+  title        String    @db.VarChar(500)
+  body         String?   @db.Text
+  resourceType String    @db.VarChar(100)
+  resourceId   String
+  link         String?   @db.VarChar(500)
+  readAt       DateTime?
+  emailSent    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, readAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id       String  @id @default(cuid())
+  userId   String
+  moduleId String  @db.VarChar(100)
+  event    String  @db.VarChar(100)
+  inApp    Boolean @default(true)
+  email    Boolean @default(true)
+  push     Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId, event])
+  @@map("notification_preferences")
+}
+
+// ─── AUDIT LOG ────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  userId       String?
+  moduleId     String   @db.VarChar(100)
+  action       String   @db.VarChar(100)
+  resourceType String   @db.VarChar(100)
+  resourceId   String
+  changes      Json?
+  ipAddress    String?  @db.VarChar(45)
+  userAgent    String?  @db.VarChar(512)
+  createdAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+// ─── ATTACHMENTS ──────────────────────────────────────────────────
+
+model Attachment {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  moduleId      String   @db.VarChar(100)
+  containerType String   @db.VarChar(100)
+  containerId   String
+  fileName      String   @db.VarChar(255)
+  fileSize      Int
+  mimeType      String   @db.VarChar(255)
+  storagePath   String   @db.VarChar(512)
+  digest        String?  @db.VarChar(128)
+  virusScanned  Boolean  @default(false)
+  uploadedById  String
+  createdAt     DateTime @default(now())
+
+  @@index([containerType, containerId])
+  @@index([workspaceId])
+  @@map("attachments")
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────
+
+model Setting {
+  id          String @id @default(cuid())
+  workspaceId String
+  moduleId    String @default("kernel") @db.VarChar(100)
+  key         String @db.VarChar(255)
+  value       Json
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, moduleId, key])
+  @@map("settings")
+}
+
+// ─── WEBHOOKS ─────────────────────────────────────────────────────
+
+model Webhook {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  url         String   @db.VarChar(2000)
+  secret      String?  @db.VarChar(255)
+  events      String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+  workspace  Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  webhookId   String
+  event       String   @db.VarChar(100)
+  payload     Json
+  statusCode  Int?
+  response    String?  @db.Text
+  success     Boolean  @default(false)
+  deliveredAt DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, deliveredAt])
+  @@map("webhook_deliveries")
+}
+
+// ─── THEMES ───────────────────────────────────────────────────────
+
+model Theme {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  variables   Json
+  logoUrl     String?
+  faviconUrl  String?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("themes")
+}

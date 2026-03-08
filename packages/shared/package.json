@@ -1,0 +1,26 @@
+{
+  "name": "@qubilt/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": {
+      "types": "./src/types/index.ts"
+    },
+    "./constants": {
+      "types": "./src/constants/index.ts"
+    },
+    "./schemas": {
+      "types": "./src/schemas/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

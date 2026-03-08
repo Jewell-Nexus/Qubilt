@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@qubilt/shared": ["packages/shared/src/index.ts"],
+      "@qubilt/shared/*": ["packages/shared/src/*"],
+      "@qubilt/module-sdk": ["packages/module-sdk/src/index.ts"],
+      "@qubilt/module-sdk/*": ["packages/module-sdk/src/*"],
+      "@qubilt/ui-kit": ["packages/ui-kit/src/index.ts"],
+      "@qubilt/ui-kit/*": ["packages/ui-kit/src/*"]
+    }
+  },
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "packages/module-sdk" }
+  ],
+  "exclude": ["node_modules", "dist"]
+}

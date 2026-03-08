@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { WorkspacesService } from './workspaces.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
@@ -25,7 +24,7 @@ interface ApiResponse<T> {
   meta?: Record<string, unknown>;
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('workspaces')
 export class WorkspacesController {
   constructor(private workspacesService: WorkspacesService) {}

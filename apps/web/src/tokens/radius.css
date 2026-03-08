@@ -1,0 +1,8 @@
+/* tokens/radius.css */
+:root {
+  --radius-sm:   4px;   /* small tags, badges */
+  --radius-md:   8px;   /* buttons, inputs    */
+  --radius-lg:   12px;  /* cards, panels      */
+  --radius-xl:   16px;  /* modals, drawers    */
+  --radius-full: 9999px;/* pills, avatars      */
+}

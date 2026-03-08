@@ -1,0 +1,37 @@
+/* tokens/themes/light.css */
+[data-theme="light"] {
+  /* Surfaces */
+  --surface-base:       var(--color-neutral-50);
+  --surface-raised:     #FFFFFF;
+  --surface-overlay:    #FFFFFF;
+  --surface-sunken:     var(--color-neutral-100);
+  --surface-inverse:    var(--color-neutral-950);
+
+  /* Borders */
+  --border-default:     var(--color-neutral-200);
+  --border-strong:      var(--color-neutral-300);
+  --border-focus:       var(--color-purple-500);
+  --border-inverse:     var(--color-neutral-700);
+
+  /* Text */
+  --text-primary:       var(--color-neutral-950);
+  --text-secondary:     var(--color-neutral-600);
+  --text-tertiary:      var(--color-neutral-400);
+  --text-disabled:      var(--color-neutral-300);
+  --text-inverse:       var(--color-neutral-50);
+  --text-on-accent:     #FFFFFF;
+
+  /* Accent */
+  --accent-default:     var(--color-purple-500);
+  --accent-hover:       var(--color-purple-600);
+  --accent-pressed:     var(--color-purple-700);
+  --accent-subtle:      var(--color-purple-100);
+  --accent-subtle-text: var(--color-purple-700);
+
+  /* Sidebar */
+  --sidebar-bg:         #FFFFFF;
+  --sidebar-border:     var(--color-neutral-200);
+  --sidebar-item-hover: var(--color-neutral-100);
+  --sidebar-item-active-bg:   var(--color-purple-100);
+  --sidebar-item-active-text: var(--color-purple-700);
+}

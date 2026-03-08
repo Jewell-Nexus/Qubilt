@@ -1,0 +1,72 @@
+/* tokens/modules.css — Module accent color pairs */
+:root {
+  /* Projects / PM — Blue */
+  --module-pm-accent:      #3B82F6;
+  --module-pm-accent-bg:   rgba(59,130,246,0.1);
+  --module-pm-accent-dark: rgba(59,130,246,0.15);
+
+  /* Wiki — Amber */
+  --module-wiki-accent:      #F59E0B;
+  --module-wiki-accent-bg:   rgba(245,158,11,0.1);
+  --module-wiki-accent-dark: rgba(245,158,11,0.15);
+
+  /* Chat — Green */
+  --module-chat-accent:      #10B981;
+  --module-chat-accent-bg:   rgba(16,185,129,0.1);
+  --module-chat-accent-dark: rgba(16,185,129,0.15);
+
+  /* CRM — Pink */
+  --module-crm-accent:      #EC4899;
+  --module-crm-accent-bg:   rgba(236,72,153,0.1);
+  --module-crm-accent-dark: rgba(236,72,153,0.15);
+
+  /* Helpdesk — Orange */
+  --module-helpdesk-accent:      #F97316;
+  --module-helpdesk-accent-bg:   rgba(249,115,22,0.1);
+  --module-helpdesk-accent-dark: rgba(249,115,22,0.15);
+
+  /* HR / People — Teal */
+  --module-hr-accent:      #14B8A6;
+  --module-hr-accent-bg:   rgba(20,184,166,0.1);
+  --module-hr-accent-dark: rgba(20,184,166,0.15);
+
+  /* Finance — Emerald */
+  --module-finance-accent:      #059669;
+  --module-finance-accent-bg:   rgba(5,150,105,0.1);
+  --module-finance-accent-dark: rgba(5,150,105,0.15);
+
+  /* OKRs — Purple */
+  --module-okrs-accent:      #8B5CF6;
+  --module-okrs-accent-bg:   rgba(139,92,246,0.1);
+  --module-okrs-accent-dark: rgba(139,92,246,0.15);
+
+  /* Assets — Slate */
+  --module-assets-accent:      #64748B;
+  --module-assets-accent-bg:   rgba(100,116,139,0.1);
+  --module-assets-accent-dark: rgba(100,116,139,0.15);
+
+  /* Whiteboard — Fuchsia */
+  --module-whiteboard-accent:      #D946EF;
+  --module-whiteboard-accent-bg:   rgba(217,70,239,0.1);
+  --module-whiteboard-accent-dark: rgba(217,70,239,0.15);
+
+  /* Video — Red */
+  --module-video-accent:      #EF4444;
+  --module-video-accent-bg:   rgba(239,68,68,0.1);
+  --module-video-accent-dark: rgba(239,68,68,0.15);
+
+  /* Code — Cyan */
+  --module-code-accent:      #06B6D4;
+  --module-code-accent-bg:   rgba(6,182,212,0.1);
+  --module-code-accent-dark: rgba(6,182,212,0.15);
+
+  /* Forums — Indigo */
+  --module-forums-accent:      #6366F1;
+  --module-forums-accent-bg:   rgba(99,102,241,0.1);
+  --module-forums-accent-dark: rgba(99,102,241,0.15);
+
+  /* Marketplace — Violet */
+  --module-marketplace-accent:      #7C3AED;
+  --module-marketplace-accent-bg:   rgba(124,58,237,0.1);
+  --module-marketplace-accent-dark: rgba(124,58,237,0.15);
+}

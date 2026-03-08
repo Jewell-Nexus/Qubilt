@@ -6,6 +6,11 @@ export const PmEvents = {
   WORK_PACKAGE_CLOSED: 'pm.work_package.closed',
   WORK_PACKAGE_REOPENED: 'pm.work_package.reopened',
   TIME_ENTRY_CREATED: 'pm.time_entry.created',
+  TIME_ENTRY_UPDATED: 'pm.time_entry.updated',
+  TIME_ENTRY_DELETED: 'pm.time_entry.deleted',
+  SPRINT_STARTED: 'pm.sprint.started',
+  SPRINT_CLOSED: 'pm.sprint.closed',
+  VERSION_CLOSED: 'pm.version.closed',
 } as const;
 
 export interface PmEventPayloads {
@@ -41,5 +46,27 @@ export interface PmEventPayloads {
     hours: number;
     projectId: string;
     workPackageId: string | null;
+  };
+  'pm.time_entry.updated': {
+    timeEntryId: string;
+    userId: string;
+    projectId: string;
+  };
+  'pm.time_entry.deleted': {
+    timeEntryId: string;
+    userId: string;
+    projectId: string;
+  };
+  'pm.sprint.started': {
+    sprintId: string;
+    projectId: string;
+  };
+  'pm.sprint.closed': {
+    sprintId: string;
+    projectId: string;
+  };
+  'pm.version.closed': {
+    versionId: string;
+    projectId: string;
   };
 }

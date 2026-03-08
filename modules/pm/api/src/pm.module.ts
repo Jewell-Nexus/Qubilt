@@ -22,6 +22,18 @@ import { WorkflowsService } from './workflows/workflows.service';
 import { WorkflowGuard } from './workflows/workflow.guard';
 import { WorkflowsController } from './workflows/workflows.controller';
 import { DateAlertsProcessor } from './jobs/date-alerts.processor';
+import { VersionsService } from './versions/versions.service';
+import { VersionsController } from './versions/versions.controller';
+import { CategoriesService } from './categories/categories.service';
+import { CategoriesController } from './categories/categories.controller';
+import { SprintsService } from './sprints/sprints.service';
+import { SprintsController } from './sprints/sprints.controller';
+import { QueriesService } from './queries/queries.service';
+import { QueriesController } from './queries/queries.controller';
+import { TimeEntriesService } from './time-entries/time-entries.service';
+import { TimeEntriesController } from './time-entries/time-entries.controller';
+import { BudgetsService } from './budgets/budgets.service';
+import { BudgetsController } from './budgets/budgets.controller';
 
 @Module({
   controllers: [
@@ -34,6 +46,12 @@ import { DateAlertsProcessor } from './jobs/date-alerts.processor';
     CustomFieldsController,
     FormLayoutsController,
     WorkflowsController,
+    VersionsController,
+    CategoriesController,
+    SprintsController,
+    QueriesController,
+    TimeEntriesController,
+    BudgetsController,
   ],
   providers: [
     PmPrismaService,
@@ -49,6 +67,12 @@ import { DateAlertsProcessor } from './jobs/date-alerts.processor';
     WorkflowsService,
     WorkflowGuard,
     DateAlertsProcessor,
+    VersionsService,
+    CategoriesService,
+    SprintsService,
+    QueriesService,
+    TimeEntriesService,
+    BudgetsService,
   ],
   exports: [
     PmPrismaService,
@@ -59,6 +83,12 @@ import { DateAlertsProcessor } from './jobs/date-alerts.processor';
     CustomFieldsService,
     CustomValuesService,
     WorkflowsService,
+    VersionsService,
+    CategoriesService,
+    SprintsService,
+    QueriesService,
+    TimeEntriesService,
+    BudgetsService,
   ],
 })
 export class PmModule {}
@@ -132,6 +162,18 @@ export const PmRegistration: QubiltModule = {
       name: 'Manage versions',
       category: 'Versions',
       description: 'Create and manage versions and milestones',
+    },
+    {
+      key: 'pm.sprints.manage',
+      name: 'Manage sprints',
+      category: 'Sprints',
+      description: 'Create, start, and close sprints',
+    },
+    {
+      key: 'pm.budgets.manage',
+      name: 'Manage budgets',
+      category: 'Budgets',
+      description: 'Create and manage project budgets',
     },
   ],
   navigation: [

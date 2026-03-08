@@ -23,6 +23,7 @@ import { RbacGuard } from './kernel/rbac/rbac.guard';
 import { PmModule } from '@qubilt/pm-api';
 import { WikiModule } from '@qubilt/wiki-api';
 import { ChatModule } from '@qubilt/chat-api';
+import { CrmModule } from '@qubilt/crm-api';
 import configuration from './config/configuration';
 
 @Module({
@@ -56,6 +57,7 @@ import configuration from './config/configuration';
     PmModule,
     WikiModule,
     ChatModule,
+    CrmModule,
   ],
   providers: [
     {

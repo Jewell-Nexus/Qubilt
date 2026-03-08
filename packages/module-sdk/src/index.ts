@@ -19,3 +19,6 @@ export type { WikiEventPayloads } from './wiki.events.js'
 
 export { ChatEvents } from './chat.events.js'
 export type { ChatEventPayloads } from './chat.events.js'
+
+export { CrmEvents } from './crm.events.js'
+export type { CrmEventPayloads } from './crm.events.js'

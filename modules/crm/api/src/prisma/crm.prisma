@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/crm-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContactType {
+  PERSON
+  ORGANIZATION
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  NOTE
+  DEADLINE
+}
+
+model CrmContact {
+  id             String      @id @default(cuid())
+  workspaceId    String
+  type           ContactType @default(PERSON)
+  firstName      String?     @db.VarChar(255)
+  lastName       String?     @db.VarChar(255)
+  email          String?     @db.VarChar(255)
+  phone          String?     @db.VarChar(50)
+  jobTitle       String?     @db.VarChar(255)
+  company        String?     @db.VarChar(255)
+  organizationId String?
+  ownerId        String
+  tags           String[]    @default([])
+  customData     Json?
+  deletedAt      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization CrmContact?  @relation("OrgEmployees", fields: [organizationId], references: [id])
+  employees    CrmContact[] @relation("OrgEmployees")
+  deals        CrmDeal[]
+  activities   CrmActivity[]
+  notes        CrmNote[]
+
+  @@index([workspaceId])
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([email])
+  @@map("crm_contacts")
+}
+
+model CrmPipeline {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stages CrmPipelineStage[]
+  deals  CrmDeal[]
+
+  @@index([workspaceId])
+  @@map("crm_pipelines")
+}
+
+model CrmPipelineStage {
+  id          String  @id @default(cuid())
+  pipelineId  String
+  name        String  @db.VarChar(255)
+  position    Int     @default(0)
+  probability Int     @default(0)
+  color       String? @db.VarChar(20)
+  isWon       Boolean @default(false)
+  isClosed    Boolean @default(false)
+
+  pipeline CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals    CrmDeal[]
+
+  @@index([pipelineId])
+  @@map("crm_pipeline_stages")
+}
+
+model CrmDeal {
+  id                String     @id @default(cuid())
+  workspaceId       String
+  pipelineId        String
+  stageId           String
+  contactId         String
+  name              String     @db.VarChar(255)
+  value             Decimal    @default(0) @db.Decimal(15, 2)
+  currency          String     @default("USD") @db.VarChar(3)
+  status            DealStatus @default(OPEN)
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  ownerId           String
+  customData        Json?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  pipeline   CrmPipeline      @relation(fields: [pipelineId], references: [id])
+  stage      CrmPipelineStage @relation(fields: [stageId], references: [id])
+  contact    CrmContact       @relation(fields: [contactId], references: [id])
+  activities CrmActivity[]
+  notes      CrmNote[]
+
+  @@index([workspaceId])
+  @@index([pipelineId])
+  @@index([stageId])
+  @@index([contactId])
+  @@index([ownerId])
+  @@index([status])
+  @@map("crm_deals")
+}
+
+model CrmActivity {
+  id          String       @id @default(cuid())
+  workspaceId String
+  type        ActivityType
+  subject     String       @db.VarChar(500)
+  description String?      @db.Text
+  contactId   String?
+  dealId      String?
+  userId      String
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  contact CrmContact? @relation(fields: [contactId], references: [id])
+  deal    CrmDeal?    @relation(fields: [dealId], references: [id])
+
+  @@index([workspaceId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([userId])
+  @@index([dueDate])
+  @@map("crm_activities")
+}
+
+model CrmNote {
+  id          String   @id @default(cuid())
+  workspaceId String
+  content     String   @db.Text
+  contactId   String?
+  dealId      String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contact CrmContact? @relation(fields: [contactId], references: [id])
+  deal    CrmDeal?    @relation(fields: [dealId], references: [id])
+
+  @@index([contactId])
+  @@index([dealId])
+  @@map("crm_notes")
+}

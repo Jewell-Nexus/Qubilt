@@ -18,6 +18,8 @@
       "@qubilt/wiki-api/*": ["../../modules/wiki/api/src/*"],
       "@qubilt/chat-api": ["../../modules/chat/api/src/chat.module.ts"],
       "@qubilt/chat-api/*": ["../../modules/chat/api/src/*"],
+      "@qubilt/crm-api": ["../../modules/crm/api/src/crm.module.ts"],
+      "@qubilt/crm-api/*": ["../../modules/crm/api/src/*"],
       "@kernel/*": ["./src/kernel/*"]
     }
   },
